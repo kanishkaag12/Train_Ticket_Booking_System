@@ -89,7 +89,7 @@ export default function SearchPage() {
           min={minDate}
           onChange={(value) => setSearch({ ...search, journeyDate: value })}
         />
-        <button className="rounded-2xl bg-accent-400 px-6 py-4 font-semibold text-brand-950 transition hover:bg-accent-300">
+        <button className="self-start rounded-2xl bg-accent-400 px-6 py-4 font-semibold text-brand-950 transition hover:bg-accent-300 lg:mt-7">
           {loading ? "Searching..." : "Find Trains"}
         </button>
       </form>
@@ -163,7 +163,7 @@ function Field({ label, options = [], onChange, ...props }) {
         className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-white outline-none transition focus:border-accent-300"
       />
       {showSuggestions && (
-        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-2xl border border-white/10 bg-brand-900 shadow-glow">
+        <div className="mt-2 max-h-60 overflow-auto rounded-2xl border border-white/10 bg-brand-900 shadow-glow">
           {filteredOptions.map((station) => (
             <button
               key={station}
