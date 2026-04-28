@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-brand-950 font-body text-slate-100 antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.glass-panel {
+  @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+}
+
+.section-title {
+  @apply font-display text-2xl text-white md:text-3xl;
+}
+
+.status-pill {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em];
+}
+
+.page-shell {
+  @apply mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-14 pt-6 md:px-6;
+}
