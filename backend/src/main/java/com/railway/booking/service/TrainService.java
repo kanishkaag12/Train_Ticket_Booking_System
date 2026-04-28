@@ -25,20 +25,31 @@ public class TrainService {
     private final TrainRepository trainRepository;
     private final PassengerRepository passengerRepository;
 
-    @Cacheable(value = "train-search", key = "#source + ':' + #destination + ':' + #journeyDate + ':' + #page + ':' + #size")
-    public Page<TrainResponse> search(String source, String destination, java.time.LocalDate journeyDate, int page, int size) {
+    // 🚀 UPDATED: Route-based search (NO DATE)
+    @Cacheable(value = "train-search", key = "#source + ':' + #destination + ':' + #page + ':' + #size")
+    public Page<TrainResponse> search(String source, String destination, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return trainRepository.findByActiveTrueAndSourceContainingIgnoreCaseAndDestinationContainingIgnoreCaseAndJourneyDate(
-                        source.trim(), destination.trim(), journeyDate, pageable)
-                .map(this::toResponse);
+
+        return trainRepository.findByRoute(
+                source.trim(),
+                destination.trim(),
+                pageable
+        ).map(this::toResponse);
     }
 
-    @Cacheable(value = "train-stations", key = "#journeyDate + ':' + #query")
-    public List<String> getStations(java.time.LocalDate journeyDate, String query) {
+    // 🚀 UPDATED: Autocomplete stations
+    @Cacheable(value = "train-stations", key = "#query")
+    public List<String> getStations(String query) {
         String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        return trainRepository.findActiveTrainsForStations(journeyDate).stream()
-                .flatMap(train -> java.util.stream.Stream.of(train.getSource(), train.getDestination()))
-                .filter(station -> normalizedQuery.isBlank() || station.toLowerCase(Locale.ROOT).contains(normalizedQuery))
+
+        List<String> sources = trainRepository.findSourceStations(normalizedQuery);
+        List<String> destinations = trainRepository.findDestinationStations(normalizedQuery);
+
+        sources.addAll(destinations);
+
+        return sources.stream()
+                .map(String::trim)
+                .filter(station -> station.toLowerCase(Locale.ROOT).contains(normalizedQuery))
                 .distinct()
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .toList();
@@ -76,7 +87,7 @@ public class TrainService {
         train.setTrainName(request.getTrainName());
         train.setSource(request.getSource());
         train.setDestination(request.getDestination());
-        train.setJourneyDate(request.getJourneyDate());
+        train.setJourneyDate(request.getJourneyDate()); // still stored but not used in search
         train.setDepartureTime(request.getDepartureTime());
         train.setArrivalTime(request.getArrivalTime());
         train.setConfirmedCapacity(request.getConfirmedCapacity());
@@ -87,10 +98,20 @@ public class TrainService {
     }
 
     private TrainResponse toResponse(Train train) {
-        List<Passenger> passengers = passengerRepository.findActivePassengersForReallocation(train.getId(), train.getJourneyDate());
-        long confirmedUsed = passengers.stream().filter(passenger -> passenger.getStatus() == BookingStatus.CNF).count();
-        long racUsed = passengers.stream().filter(passenger -> passenger.getStatus() == BookingStatus.RAC).count();
-        long wlUsed = passengers.stream().filter(passenger -> passenger.getStatus() == BookingStatus.WL).count();
+        List<Passenger> passengers = passengerRepository
+                .findActivePassengersForReallocation(train.getId(), train.getJourneyDate());
+
+        long confirmedUsed = passengers.stream()
+                .filter(p -> p.getStatus() == BookingStatus.CNF)
+                .count();
+
+        long racUsed = passengers.stream()
+                .filter(p -> p.getStatus() == BookingStatus.RAC)
+                .count();
+
+        long wlUsed = passengers.stream()
+                .filter(p -> p.getStatus() == BookingStatus.WL)
+                .count();
 
         return TrainResponse.builder()
                 .id(train.getId())
