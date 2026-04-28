@@ -1,6 +1,7 @@
 import { Clock3, MapPin, Ticket } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { currency } from "../utils/formatters";
 
 function AvailabilityPill({ label, value, tone }) {
@@ -13,6 +14,28 @@ function AvailabilityPill({ label, value, tone }) {
 }
 
 export default function TrainCard({ train }) {
+  const [visibleCardIndex, setVisibleCardIndex] = useState(null);
+
+  useEffect(() => {
+    // Set initial random card
+    const randomCard = Math.floor(Math.random() * 3);
+    setVisibleCardIndex(randomCard);
+
+    // Change to a random card every 3 seconds
+    const interval = setInterval(() => {
+      const newCard = Math.floor(Math.random() * 3);
+      setVisibleCardIndex(newCard);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const availabilityCards = [
+    { label: "Confirmed", value: train.confirmedAvailable, tone: "border-success/25 bg-success/10" },
+    { label: "RAC", value: train.racAvailable, tone: "border-warning/25 bg-warning/10" },
+    { label: "Waitlist", value: train.waitingAvailable, tone: "border-danger/25 bg-danger/10" }
+  ];
+
   return (
     <motion.div
       layout
@@ -43,9 +66,13 @@ export default function TrainCard({ train }) {
         </div>
 
         <div className="grid gap-3 md:grid-cols-3 lg:w-[420px]">
-          <AvailabilityPill label="Confirmed" value={train.confirmedAvailable} tone="border-success/25 bg-success/10" />
-          <AvailabilityPill label="RAC" value={train.racAvailable} tone="border-warning/25 bg-warning/10" />
-          <AvailabilityPill label="Waitlist" value={train.waitingAvailable} tone="border-danger/25 bg-danger/10" />
+          {visibleCardIndex !== null && (
+            <AvailabilityPill 
+              label={availabilityCards[visibleCardIndex].label} 
+              value={availabilityCards[visibleCardIndex].value} 
+              tone={availabilityCards[visibleCardIndex].tone} 
+            />
+          )}
         </div>
       </div>
 

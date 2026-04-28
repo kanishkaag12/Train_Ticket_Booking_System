@@ -18,6 +18,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [stations, setStations] = useState([]);
+  const [visibleCards, setVisibleCards] = useState([]);
 
   const stats = useMemo(() => {
     const totals = results.reduce(
@@ -32,6 +33,29 @@ export default function SearchPage() {
 
     return totals;
   }, [results]);
+
+  // Generate random visible cards (1-3 cards shown randomly)
+  useEffect(() => {
+    const generateRandomCards = () => {
+      const cardCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 cards
+      const indices = [];
+      const available = [0, 1, 2];
+      
+      for (let i = 0; i < cardCount; i++) {
+        const randomIdx = Math.floor(Math.random() * available.length);
+        indices.push(available[randomIdx]);
+        available.splice(randomIdx, 1);
+      }
+      
+      setVisibleCards(indices.sort());
+    };
+
+    generateRandomCards();
+    
+    // Regenerate random cards every 5 seconds
+    const interval = setInterval(generateRandomCards, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = async (event) => {
     event.preventDefault();
@@ -95,9 +119,9 @@ export default function SearchPage() {
       </form>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Confirmed Inventory" value={stats.confirmed} helper="Green availability across matched trains" />
-        <StatCard label="RAC Window" value={stats.rac} helper="Passengers nearing confirmation" />
-        <StatCard label="Waitlist Slots" value={stats.waiting} helper="Dynamic queue capacity still open" />
+        {visibleCards.includes(0) && <StatCard label="Confirmed Inventory" value={stats.confirmed} helper="Green availability across matched trains" />}
+        {visibleCards.includes(1) && <StatCard label="RAC Window" value={stats.rac} helper="Passengers nearing confirmation" />}
+        {visibleCards.includes(2) && <StatCard label="Waitlist Slots" value={stats.waiting} helper="Dynamic queue capacity still open" />}
       </section>
 
       {message && <div className="rounded-2xl bg-white/5 px-5 py-4 text-slate-300">{message}</div>}
